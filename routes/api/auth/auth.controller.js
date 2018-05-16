@@ -63,7 +63,8 @@ exports.login = (req, res) => {
 					{
 						_id: result[0].id,
 						username: result[0].username,
-						school: result[0].school
+						school: result[0].school,
+						team_id: result[0].team_id
 					},
 					secret,
 					{

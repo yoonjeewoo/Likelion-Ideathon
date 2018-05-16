@@ -68,3 +68,68 @@ exports.editIdea = (req, res) => {
 		}
 	)
 }
+
+exports.voteIdea = (req, res) => {
+	conn.query(
+		`select * from votes where user_id = ${req.decoded._id}`,
+		(err, result) => {
+			if (result.length < 11 ) {
+				conn.query(
+					`select id from ideas where team_id = ${req.decoded.team_id} and status = 0`,
+					(err, result) => {
+						if (err) throw err;
+						if (result.length == 0) {
+							conn.query(
+								"select id from ideas where status = 0",
+								(err, idea) => {
+									if (err) throw err;
+									if (idea.length == 0) {
+										return res.status(406).json({
+											message: 'you cannot vote right now'
+										})
+									} else {
+										conn.query(
+											`select * from votes where user_id = ${req.decoded._id} and ideas_id = ${idea[0].id}`,
+											(err, result) => {
+												if (result.length == 0) {
+													conn.query(
+														`update ideas set vote_cnt = vote_cnt + 1 where id = ${idea[0].id}`,
+														(err, result) => {
+															if (err) throw err;
+															conn.query(
+																`insert into votes(user_id, ideas_id) values(${req.decoded._id},${idea[0].id})`,
+																(err, result) => {
+																	if (err) throw err;
+																	return res.status(200).json({
+																		message: 'voted successfully'
+																	})
+																}
+															)
+														}
+													)
+												} else {
+													return res.status(406).json({
+														message: 'you cannot vote twice'
+													})
+												}
+											}
+										)
+									}
+								}
+							)
+						} else {
+							return res.status(406).json({
+								message: 'you cannot vote your team'
+							})
+						}
+					}
+				)
+			} else {
+				return res.status(406).json({
+					message: 'you spent all your votes'
+				})
+			}
+		}
+	)
+	
+}
