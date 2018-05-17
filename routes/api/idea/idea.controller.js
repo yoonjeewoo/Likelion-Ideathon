@@ -59,13 +59,13 @@ exports.editIdea = (req, res) => {
 exports.voteIdea = (req, res) => {
 	conn.query(
 		`select * from votes where user_id = ${req.decoded._id}`,
-		(err, result) => {
-			if (result.length < 11 ) {
+		(err, result1) => {
+			if (result1.length < 11 ) {
 				conn.query(
 					`select id from ideas where team_id = ${req.decoded.team_id} and status = 0`,
-					(err, result) => {
+					(err, result2) => {
 						if (err) throw err;
-						if (result.length == 0) {
+						if (result2.length == 0) {
 							conn.query(
 								"select id from ideas where status = 0",
 								(err, idea) => {
@@ -77,15 +77,15 @@ exports.voteIdea = (req, res) => {
 									} else {
 										conn.query(
 											`select * from votes where user_id = ${req.decoded._id} and ideas_id = ${idea[0].id}`,
-											(err, result) => {
-												if (result.length == 0) {
+											(err, result3) => {
+												if (result3.length == 0) {
 													conn.query(
 														`update ideas set vote_cnt = vote_cnt + 1 where id = ${idea[0].id}`,
-														(err, result) => {
+														(err) => {
 															if (err) throw err;
 															conn.query(
 																`insert into votes(user_id, ideas_id) values(${req.decoded._id},${idea[0].id})`,
-																(err, result) => {
+																(err) => {
 																	if (err) throw err;
 																	return res.status(200).json({
 																		message: '투표가 성공적으로 완료되었습니다.'
@@ -118,5 +118,4 @@ exports.voteIdea = (req, res) => {
 			}
 		}
 	)
-	
 }
