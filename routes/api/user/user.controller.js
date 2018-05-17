@@ -6,7 +6,7 @@ const conn = mysql.createConnection(config);
 
 exports.getMyInfo = (req, res) => {
 	conn.query(
-		`select id, username, team_id, school, admin from users where id = ${req.decoded._id}`,
+		`select users.id, username, team_id, school, admin, name from users join teams on users.team_id = teams.id where users.id = ${req.decoded._id}`,
 		(err, result) => {
 			return res.status(200).json({
 				result
