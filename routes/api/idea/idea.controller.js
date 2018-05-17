@@ -17,7 +17,7 @@ exports.createIdea = (req, res) => {
 		+ d.getDate() + '_'
 		+ crypto.randomBytes(20).toString('hex') +
 		+ req.decoded._id + '.jpg';
-	const picUrl = `https://s3-ap-northeast-2c.amazonaws.com/unitedideathon/${picKey}`;
+	const picUrl = `https://s3-ap-northeast-2.amazonaws.com/unitedideathon/${picKey}`;
 	let buf = new Buffer(base64.replace(/^data:image\/\w+;base64,/, ''), 'base64');
 	s3.putObject({
 		Bucket: 'unitedideathon',
