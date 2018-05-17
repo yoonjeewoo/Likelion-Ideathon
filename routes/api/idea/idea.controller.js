@@ -4,48 +4,35 @@ const mysql = require('mysql');
 const config = require('../../../config');
 const conn = mysql.createConnection(config);
 
-let findTeamId = (team_name) => {
-	return new Promise((resolve, reject) => {
-		conn.query(
-			"SELECT id FROM teams WHERE name = ?",
-			[team_name],
-			(err, result) => {
-				if(err) reject();
-				resolve(result);
-			}
-		)
-	})
-}
-
-let input = (result, title, content) => {
-	return new Promise((resolve, reject) => {
-		conn.query(
-			"INSERT INTO ideas(team_id, title, content, img_url, vote_cnt, status) VALUES(?, ?, ?, ?, ?, ?)",
-			[result[0].id, title, content, "http://news.unn.net/news/photo/Gisa/200910/30/image/20091030161129.jpg", 0, 1],
-			(err, result) => {
-				if (err) reject();
-				resolve();
-			}
-		)
-	})
-}
-
-
 exports.createIdea = (req, res) => {
-	const { title, content, team_name } = req.body;
-	async function create_idea(title, content, team_name) {
-		let result = await findTeamId(team_name);
-		await input(result, title, content);
-		await res.status(200).json({
-			message: 'done'
-		})
-	}
-	create_idea(title, content, team_name);
+	const { title, content } = req.body;
+	conn.query(
+		`select * from ideas where team_id = ${req.decoded.team_id}`,
+		(err, result) => {
+			if (err) throw err;
+			if (result.length == 0) {
+				conn.query(
+					"INSERT INTO ideas(team_id, title, content, img_url, vote_cnt, status) VALUES(?, ?, ?, ?, ?, ?)",
+					[req.decoded.team_id, title, content, "http://news.unn.net/news/photo/Gisa/200910/30/image/20091030161129.jpg", 0, 1],
+					(err, result) => {
+						if (err) throw err;
+						return res.status(200).json({
+							message: "아이디어 등록이 완료되었습니다."
+						})
+					}
+				)
+			} else {
+				return res.status(406).json({
+					message: "한 팀에 한 아이디어만 등록이 가능합니다."
+				})
+			}
+		}
+	)
 }
 
 exports.getIdeaList = (req, res) => {
 	conn.query(
-		'select ideas.id, title, content, img_url, vote_cnt, name, status from ideas join teams on ideas.team_id = teams.id order by vote_cnt desc',
+		'select ideas.id, title, content, img_url, vote_cnt, team_id, name, status from ideas join teams on ideas.team_id = teams.id order by vote_cnt desc',
 		(err, result) => {
 			if (err) throw err;
 			return res.status(200).json({
@@ -59,7 +46,7 @@ exports.editIdea = (req, res) => {
 	const { idea_id } = req.params;
 	const { title, content } = req.body;
 	conn.query(
-		`update ideas set title = '${title}', content = '${content}' where id = ${idea_id}`,
+		`update ideas set title = '${title}', content = '${content}' where id = ${idea_id} and team_id = ${req.decoded.team_id}`,
 		(err, result) => {
 			if (err) throw err;
 			return res.status(200).json({
@@ -85,7 +72,7 @@ exports.voteIdea = (req, res) => {
 									if (err) throw err;
 									if (idea.length == 0) {
 										return res.status(406).json({
-											message: 'you cannot vote right now'
+											message: '현재는 투표가능시간이 아닙니다.'
 										})
 									} else {
 										conn.query(
@@ -101,7 +88,7 @@ exports.voteIdea = (req, res) => {
 																(err, result) => {
 																	if (err) throw err;
 																	return res.status(200).json({
-																		message: 'voted successfully'
+																		message: '투표가 성공적으로 완료되었습니다.'
 																	})
 																}
 															)
@@ -109,7 +96,7 @@ exports.voteIdea = (req, res) => {
 													)
 												} else {
 													return res.status(406).json({
-														message: 'you cannot vote twice'
+														message: '중복투표는 불가능합니다.'
 													})
 												}
 											}
@@ -119,14 +106,14 @@ exports.voteIdea = (req, res) => {
 							)
 						} else {
 							return res.status(406).json({
-								message: 'you cannot vote your team'
+								message: '본인의 팀에는 투표를 하실 수 없습니다.'
 							})
 						}
 					}
 				)
 			} else {
 				return res.status(406).json({
-					message: 'you spent all your votes'
+					message: '모든 투표권을 행사했습니다.'
 				})
 			}
 		}
