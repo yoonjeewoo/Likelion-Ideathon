@@ -72,6 +72,17 @@ exports.getIdeaList = (req, res) => {
 	)
 }
 
+exports.presentNow = (req, res) => {
+	conn.query(
+		`select * from ideas where status = 0`,
+		(err, result) => {
+			return res.status(200).json({
+				result	
+			})
+		}
+	)
+}
+
 exports.editIdea = (req, res) => {
 	const { idea_id } = req.params;
 	const { title, content } = req.body;
