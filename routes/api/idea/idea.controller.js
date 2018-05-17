@@ -9,7 +9,11 @@ const conn = mysql.createConnection(config);
 
 exports.createIdea = (req, res) => {
 	const { title, content, base64 } = req.body;
-
+	if (title === undefined || content === undefined || base64 === undefined) {
+		return res.status(406).json({
+			message: '파라미터 오류'
+		})
+	}
 	const d = new Date();
 	d.setUTCHours(d.getUTCHours() + 9);
 	const picKey = d.getFullYear() + '_'
