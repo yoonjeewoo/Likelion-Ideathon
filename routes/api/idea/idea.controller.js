@@ -175,7 +175,7 @@ exports.voteIdea = (req, res) => {
 
 exports.presentNow = (req, res) => {
 	conn.query(
-		`select * from ideas where status = 0`,
+		`select * from ideas join teams on ideas.team_id = teams.id where status = 0;`,
 		(err, result) => {
 			return res.status(200).json({
 				result
