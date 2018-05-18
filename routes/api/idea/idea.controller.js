@@ -9,55 +9,77 @@ const conn = mysql.createConnection(config);
 
 exports.createIdea = (req, res) => {
 	const { title, content, base64 } = req.body;
-	if (title === undefined || content === undefined || base64 === undefined) {
-		return res.status(406).json({
-			message: '파라미터 오류'
-		})
-	}
-	const d = new Date();
-	d.setUTCHours(d.getUTCHours() + 9);
-	const picKey = d.getFullYear() + '_'
-		+ d.getMonth() + '_'
-		+ d.getDate() + '_'
-		+ crypto.randomBytes(20).toString('hex') +
-		+ req.decoded._id + '.jpg';
-	const picUrl = `https://s3-ap-northeast-2.amazonaws.com/unitedideathon/${picKey}`;
-	let buf = new Buffer(base64.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-	s3.putObject({
-		Bucket: 'unitedideathon',
-		Key: picKey,
-		Body: buf,
-		ACL: 'public-read'
-	}, function (err, response) {
-		if (err) {
-			return res.status(406).json({
-				err
-			})
-		} else {
-			conn.query(
-				`select * from ideas where team_id = ${req.decoded.team_id}`,
-				(err, result) => {
-					if (err) throw err;
-					if (result.length == 0) {
-						conn.query(
-							"INSERT INTO ideas(team_id, title, content, img_url, vote_cnt, status) VALUES(?, ?, ?, ?, ?, ?)",
-							[req.decoded.team_id, title, content, picUrl, 0, 1],
-							(err, result) => {
-								if (err) throw err;
-								return res.status(200).json({
-									message: "아이디어 등록이 완료되었습니다."
-								})
-							}
-						)
-					} else {
-						return res.status(406).json({
-							message: "한 팀에 한 아이디어만 등록이 가능합니다."
-						})
-					}
+	if (base64 === undefined || base64 === null) {
+		conn.query(
+			`select * from ideas where team_id = ${req.decoded.team_id}`,
+			(err, result) => {
+				if (err) throw err;
+				if (result.length == 0) {
+					conn.query(
+						"INSERT INTO ideas(team_id, title, content, img_url, vote_cnt, status) VALUES(?, ?, ?, ?, ?, ?)",
+						[req.decoded.team_id, title, content, "https://s3.ap-northeast-2.amazonaws.com/unitedideathon/KakaoTalk_Photo_2018-05-18-20-39-42_74.jpeg", 0, 1],
+						(err, result) => {
+							if (err) throw err;
+							return res.status(200).json({
+								message: "아이디어 등록이 완료되었습니다."
+							})
+						}
+					)
+				} else {
+					return res.status(406).json({
+						message: "한 팀에 한 아이디어만 등록이 가능합니다."
+					})
 				}
-			)
-		}
-	});
+			}
+		)
+
+	} else {
+		const d = new Date();
+		d.setUTCHours(d.getUTCHours() + 9);
+		const picKey = d.getFullYear() + '_'
+			+ d.getMonth() + '_'
+			+ d.getDate() + '_'
+			+ crypto.randomBytes(20).toString('hex') +
+			+ req.decoded._id + '.jpg';
+		const picUrl = `https://s3-ap-northeast-2.amazonaws.com/unitedideathon/${picKey}`;
+		let buf = new Buffer(base64.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+		s3.putObject({
+			Bucket: 'unitedideathon',
+			Key: picKey,
+			Body: buf,
+			ACL: 'public-read'
+		}, function (err, response) {
+			if (err) {
+				return res.status(406).json({
+					err
+				})
+			} else {
+				conn.query(
+					`select * from ideas where team_id = ${req.decoded.team_id}`,
+					(err, result) => {
+						if (err) throw err;
+						if (result.length == 0) {
+							conn.query(
+								"INSERT INTO ideas(team_id, title, content, img_url, vote_cnt, status) VALUES(?, ?, ?, ?, ?, ?)",
+								[req.decoded.team_id, title, content, picUrl, 0, 1],
+								(err, result) => {
+									if (err) throw err;
+									return res.status(200).json({
+										message: "아이디어 등록이 완료되었습니다."
+									})
+								}
+							)
+						} else {
+							return res.status(406).json({
+								message: "한 팀에 한 아이디어만 등록이 가능합니다."
+							})
+						}
+					}
+				)
+			}
+		});
+	}
+	
 }
 
 exports.getIdeaList = (req, res) => {
