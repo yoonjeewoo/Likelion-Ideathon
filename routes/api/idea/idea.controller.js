@@ -112,7 +112,7 @@ exports.voteIdea = (req, res) => {
 	conn.query(
 		`select * from votes where user_id = ${req.decoded._id}`,
 		(err, result1) => {
-			if (result1.length < 11 ) {
+			if (result1.length < 9 ) {
 				conn.query(
 					`select id from ideas where team_id = ${req.decoded.team_id} and status = 0`,
 					(err, result2) => {
